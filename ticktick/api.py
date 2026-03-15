@@ -161,8 +161,8 @@ class TickTickClient:
 
         # Inbox Id
         self.inbox_id = response['inboxId']
-        # Set list groups
-        self.state['project_folders'] = response['projectGroups']
+        # Set list groups (API may return None when user has no project folders)
+        self.state['project_folders'] = response['projectGroups'] or []
         # Set lists
         self.state['projects'] = response['projectProfiles']
         # Set Uncompleted Tasks
