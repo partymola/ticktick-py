@@ -375,6 +375,8 @@ class TickTickClient:
             # If a specific key was passed for self.state
             # Go through self.state[key_name] and see if all the fields in kwargs match
             # If all don't match return empty list
+            if not isinstance(self.state[search], list):
+                return []
             for index in self.state[search]:
                 all_match = True
                 for field in kwargs:
@@ -388,6 +390,8 @@ class TickTickClient:
             # No key passed, search entire self.state dictionary
             # Search the first level of the state dictionary
             for primarykey in self.state:
+                if not isinstance(self.state[primarykey], list):
+                    continue
                 skip_primary_key = False
                 all_match = True
                 middle_key = 0
@@ -466,6 +470,8 @@ class TickTickClient:
 
         # Search just in the desired list
         if search is not None:
+            if not isinstance(self.state[search], list):
+                return {}
             for index in self.state[search]:
                 if index['id'] == obj_id:
                     return index
@@ -473,6 +479,8 @@ class TickTickClient:
         else:
             # Search all items in self.state
             for prim_key in self.state:
+                if not isinstance(self.state[prim_key], list):
+                    continue
                 for our_object in self.state[prim_key]:
                     if 'id' not in our_object:
                         break
@@ -532,6 +540,8 @@ class TickTickClient:
 
         # Search just in the desired list
         if search is not None:
+            if not isinstance(self.state[search], list):
+                return {}
             for index in self.state[search]:
                 if index['etag'] == etag:
                     return index
@@ -539,6 +549,8 @@ class TickTickClient:
         else:
             # Search all items in self.state
             for prim_key in self.state:
+                if not isinstance(self.state[prim_key], list):
+                    continue
                 for our_object in self.state[prim_key]:
                     if 'etag' not in our_object:
                         break
@@ -607,6 +619,8 @@ class TickTickClient:
 
         # Search just in the desired list
         if search is not None:
+            if not isinstance(self.state[search], list):
+                return {}
             # Go through the state dictionary list and delete the object that matches the fields
             for item in range(len(self.state[search])):
                 all_match = True
@@ -624,6 +638,8 @@ class TickTickClient:
             # No key passed, search entire self.state dictionary
             # Search the first level of the state dictionary
             for primary_key in self.state:
+                if not isinstance(self.state[primary_key], list):
+                    continue
                 skip_primary_key = False
                 all_match = True
                 middle_key = 0
