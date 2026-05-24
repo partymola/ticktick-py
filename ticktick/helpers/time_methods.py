@@ -39,6 +39,13 @@ def convert_local_time_to_utc(original_time, time_zone: str):
     """
 
     utc = pytz.utc
+    # If the input is already timezone-aware, convert directly to UTC. The
+    # original code path round-trips the datetime through strftime/strptime,
+    # which silently strips any existing tzinfo and then re-localises the
+    # naive wall clock as the supplied time_zone - double-shifting tz-aware
+    # inputs (e.g. '20:45+01:00' returned '18:45' UTC instead of '19:45').
+    if original_time.tzinfo is not None:
+        return original_time.astimezone(utc).replace(tzinfo=None)
     time_zone = pytz.timezone(time_zone)
     original_time = original_time.strftime(DATE_FORMAT)
     time_object = datetime.datetime.strptime(original_time, DATE_FORMAT)
