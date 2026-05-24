@@ -361,3 +361,132 @@ class TestDeleteFromLocalState:
         name = str(uuid.uuid4())
         deleted = fake_client.delete_from_local_state(name=name)
         assert not deleted  # Assert that nothing was deleted
+
+
+class TestNoneStateValues:
+    """
+    Tests that state lookup methods handle None values in state gracefully.
+
+    The TickTick API may return None for certain state keys (e.g. projectGroups
+    when a user has no project folders). The sync() method stores these directly
+    into state, which causes iteration methods to crash with:
+        TypeError: 'NoneType' object is not iterable
+    """
+
+    def test_get_by_id_with_none_state_value_full_scan(self, fake_client):
+        """
+        get_by_id should skip None state values during full scan
+        """
+        fake_client.state['project_folders'] = None
+        list_id = str(uuid.uuid4())
+        fake_obj = {'id': list_id}
+        fake_client.state['projects'].append(fake_obj)
+        found = fake_client.get_by_id(list_id)
+        assert found
+        assert found['id'] == list_id
+        fake_client.delete_from_local_state(id=list_id, search='projects')
+        fake_client.state['project_folders'] = []
+
+    def test_get_by_id_with_none_state_value_targeted(self, fake_client):
+        """
+        get_by_id should return empty dict when targeted search hits a None value
+        """
+        fake_client.state['project_folders'] = None
+        result = fake_client.get_by_id(str(uuid.uuid4()), search='project_folders')
+        assert result == {}
+        fake_client.state['project_folders'] = []
+
+    def test_get_by_id_not_found_with_none_state_value(self, fake_client):
+        """
+        get_by_id should return empty dict for missing id even with None in state
+        """
+        fake_client.state['project_folders'] = None
+        result = fake_client.get_by_id(str(uuid.uuid4()))
+        assert result == {}
+        fake_client.state['project_folders'] = []
+
+    def test_get_by_etag_with_none_state_value_full_scan(self, fake_client):
+        """
+        get_by_etag should skip None state values during full scan
+        """
+        fake_client.state['project_folders'] = None
+        etag = str(uuid.uuid4())
+        obj = {'etag': etag}
+        fake_client.state['tags'].append(obj)
+        found = fake_client.get_by_etag(etag)
+        assert found
+        assert found['etag'] == etag
+        fake_client.delete_from_local_state(etag=etag, search='tags')
+        fake_client.state['project_folders'] = []
+
+    def test_get_by_etag_with_none_state_value_targeted(self, fake_client):
+        """
+        get_by_etag should return empty dict when targeted search hits a None value
+        """
+        fake_client.state['project_folders'] = None
+        result = fake_client.get_by_etag(str(uuid.uuid4()), search='project_folders')
+        assert result == {}
+        fake_client.state['project_folders'] = []
+
+    def test_get_by_fields_with_none_state_value_full_scan(self, fake_client):
+        """
+        get_by_fields should skip None state values during full scan
+        """
+        fake_client.state['project_folders'] = None
+        name = str(uuid.uuid4())
+        fake_obj = {'name': name}
+        fake_client.state['projects'].append(fake_obj)
+        found = fake_client.get_by_fields(name=name)
+        assert found
+        assert found['name'] == name
+        fake_client.delete_from_local_state(name=name, search='projects')
+        fake_client.state['project_folders'] = []
+
+    def test_get_by_fields_with_none_state_value_targeted(self, fake_client):
+        """
+        get_by_fields should return empty list when targeted search hits a None value
+        """
+        fake_client.state['project_folders'] = None
+        result = fake_client.get_by_fields(name='anything', search='project_folders')
+        assert result == []
+        fake_client.state['project_folders'] = []
+
+    def test_delete_from_local_state_with_none_state_value_full_scan(self, fake_client):
+        """
+        delete_from_local_state should skip None state values during full scan
+        """
+        fake_client.state['project_folders'] = None
+        name = str(uuid.uuid4())
+        item = {'name': name}
+        fake_client.state['projects'].append(item)
+        deleted = fake_client.delete_from_local_state(name=name)
+        assert deleted
+        assert deleted['name'] == name
+        fake_client.state['project_folders'] = []
+
+    def test_delete_from_local_state_with_none_state_value_targeted(self, fake_client):
+        """
+        delete_from_local_state should return empty dict when targeted search hits None
+        """
+        fake_client.state['project_folders'] = None
+        result = fake_client.delete_from_local_state(name='anything', search='project_folders')
+        assert result == {}
+        fake_client.state['project_folders'] = []
+
+    def test_sync_coalesces_none_project_groups(self, fake_client):
+        """
+        sync() should store empty list when API returns None for projectGroups
+        """
+        sync_response = {
+            'inboxId': str(uuid.uuid4()),
+            'projectGroups': None,
+            'projectProfiles': [{'id': 'p1', 'name': 'test'}],
+            'syncTaskBean': {'update': []},
+            'tags': []
+        }
+        with patch('ticktick.api.TickTickClient.http_get',
+                   return_value=sync_response):
+            fake_client.sync()
+        assert fake_client.state['project_folders'] == []
+        assert isinstance(fake_client.state['project_folders'], list)
+        fake_client.reset_local_state()
