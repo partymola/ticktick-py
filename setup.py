@@ -22,7 +22,7 @@ VERSION = '2.0.4'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'requests==2.26.0', 'pytz==2021.1', 'regex==2021.4.4', 'urllib3==1.26.7'
+    'requests==2.26.0', 'pytz==2021.1', 'urllib3==1.26.7'
 ]
 
 # What packages are optional?
